@@ -7,6 +7,7 @@ using System;
 using Sanderling.Interface.MemoryStruct;
 using Sanderling.ABot.Parse;
 using Bib3;
+using WindowsInput.Native;
 
 namespace Sanderling.ABot.Bot.Task
 {
@@ -14,7 +15,10 @@ namespace Sanderling.ABot.Bot.Task
 	{
 		const int TargetCountMax = 4;
 
-		public Bot bot;
+        // counter to detect reinforcement
+        static int listOverviewEntryToAttackLastLength = 0;
+
+        public Bot bot;
 
 		public bool Completed { private set; get; }
 
@@ -22,81 +26,112 @@ namespace Sanderling.ABot.Bot.Task
 		{
 			get
 			{
-				var memoryMeasurementAtTime = bot?.MemoryMeasurementAtTime;
-				var memoryMeasurementAccu = bot?.MemoryMeasurementAccu;
+                var memoryMeasurementAtTime = bot?.MemoryMeasurementAtTime;
+                var memoryMeasurementAccu = bot?.MemoryMeasurementAccu;
 
-				var memoryMeasurement = memoryMeasurementAtTime?.Value;
+                var memoryMeasurement = memoryMeasurementAtTime?.Value;
 
-				if (!memoryMeasurement.ManeuverStartPossible())
-					yield break;
+                if (!memoryMeasurement.ManeuverStartPossible())
+                    yield break;
 
-				var listOverviewEntryToAttack =
-					memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
-					?.OrderBy(entry => bot.AttackPriorityIndex(entry))
-					?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
-					?.ToArray();
+                var listOverviewEntryToAttack =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
+                    ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
+                    ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
 
-				var targetSelected =
-					memoryMeasurement?.Target?.FirstOrDefault(target => target?.IsSelected ?? false);
+                var targetSelected =
+                    memoryMeasurement?.Target?.FirstOrDefault(target => target?.IsSelected ?? false);
 
-				var shouldAttackTarget =
-					listOverviewEntryToAttack?.Any(entry => entry?.MeActiveTarget ?? false) ?? false;
+                var shouldAttackTarget =
+                    listOverviewEntryToAttack?.Any(entry => entry?.MeActiveTarget ?? false) ?? false;
 
-				var setModuleWeapon =
-					memoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.IsWeapon ?? false);
+                var setModuleWeapon =
+                    memoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.IsWeapon ?? false);
 
-				if (null != targetSelected)
-					if (shouldAttackTarget)
-						yield return bot.EnsureIsActive(setModuleWeapon);
-					else
-						yield return targetSelected.ClickMenuEntryByRegexPattern(bot, "unlock");
+                try
+                {
 
-				var droneListView = memoryMeasurement?.WindowDroneView?.FirstOrDefault()?.ListView;
+                    if (null != targetSelected)
+                        if (shouldAttackTarget)
+                            yield return bot.EnsureIsActive(setModuleWeapon);
+                        else
+                            yield return targetSelected.ClickMenuEntryByRegexPattern(bot, "unlock");
 
-				var droneGroupWithNameMatchingPattern = new Func<string, DroneViewEntryGroup>(namePattern =>
-						droneListView?.Entry?.OfType<DroneViewEntryGroup>()?.FirstOrDefault(group => group?.LabelTextLargest()?.Text?.RegexMatchSuccessIgnoreCase(namePattern) ?? false));
+                    var droneListView = memoryMeasurement?.WindowDroneView?.FirstOrDefault()?.ListView;
 
-				var droneGroupInBay = droneGroupWithNameMatchingPattern("bay");
-				var droneGroupInLocalSpace = droneGroupWithNameMatchingPattern("local space");
+                    var droneGroupWithNameMatchingPattern = new Func<string, DroneViewEntryGroup>(namePattern =>
+                            droneListView?.Entry?.OfType<DroneViewEntryGroup>()?.FirstOrDefault(group => group?.LabelTextLargest()?.Text?.RegexMatchSuccessIgnoreCase(namePattern) ?? false));
 
-				var droneInBayCount = droneGroupInBay?.Caption?.Text?.CountFromDroneGroupCaption();
-				var droneInLocalSpaceCount = droneGroupInLocalSpace?.Caption?.Text?.CountFromDroneGroupCaption();
+                    var droneGroupInBay = droneGroupWithNameMatchingPattern("bay");
+                    var droneGroupInLocalSpace = droneGroupWithNameMatchingPattern("local space");
 
-				//	assuming that local space is bottommost group.
-				var setDroneInLocalSpace =
-					droneListView?.Entry?.OfType<DroneViewEntryItem>()
-					?.Where(drone => droneGroupInLocalSpace?.RegionCenter()?.B < drone?.RegionCenter()?.B)
-					?.ToArray();
+                    var droneInBayCount = droneGroupInBay?.Caption?.Text?.CountFromDroneGroupCaption();
+                    var droneInLocalSpaceCount = droneGroupInLocalSpace?.Caption?.Text?.CountFromDroneGroupCaption();
 
-				var droneInLocalSpaceSetStatus =
-					setDroneInLocalSpace?.Select(drone => drone?.LabelText?.Select(label => label?.Text?.StatusStringFromDroneEntryText()))?.ConcatNullable()?.WhereNotDefault()?.Distinct()?.ToArray();
+                    //	assuming that local space is bottommost group.
+                    var setDroneInLocalSpace =
+                        droneListView?.Entry?.OfType<DroneViewEntryItem>()
+                        ?.Where(drone => droneGroupInLocalSpace?.RegionCenter()?.B < drone?.RegionCenter()?.B)
+                        ?.ToArray();
 
-				var droneInLocalSpaceIdle =
-					droneInLocalSpaceSetStatus?.Any(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("idle")) ?? false;
+                    var droneInLocalSpaceSetStatus =
+                        setDroneInLocalSpace?.Select(drone => drone?.LabelText?.Select(label => label?.Text?.StatusStringFromDroneEntryText()))?.ConcatNullable()?.WhereNotDefault()?.Distinct()?.ToArray();
 
-				if (shouldAttackTarget)
-				{
-					if (0 < droneInBayCount && droneInLocalSpaceCount < 5)
-						yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
+                    var droneInLocalSpaceIdle =
+                        droneInLocalSpaceSetStatus?.Any(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("idle")) ?? false;
 
-					if (droneInLocalSpaceIdle)
-						yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"engage");
-				}
+                    if (listOverviewEntryToAttack?.Length > listOverviewEntryToAttackLastLength) // reinforment detected
+                        if (0 < droneInLocalSpaceCount)
+                            yield return new ReturnDroneTask(); // prevent drone from being targetted
 
-				var overviewEntryLockTarget =
-					listOverviewEntryToAttack?.FirstOrDefault(entry => !((entry?.MeTargeted ?? false) || (entry?.MeTargeting ?? false)));
+                    if (shouldAttackTarget)
+                    {
+                        if (0 < droneInBayCount && droneInLocalSpaceCount < 5)
+                            yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
 
-				if (null != overviewEntryLockTarget && !(TargetCountMax <= memoryMeasurement?.Target?.Length))
-					yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
+                        if (droneInLocalSpaceIdle)
+                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"engage");
+                    }
 
-				if (!(0 < listOverviewEntryToAttack?.Length))
-					if (0 < droneInLocalSpaceCount)
-						yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"return.*bay");
-					else
-						Completed = true;
-			}
-		}
+                    var overviewEntryLockTarget =
+                        listOverviewEntryToAttack?.FirstOrDefault(entry => !((entry?.MeTargeted ?? false) || (entry?.MeTargeting ?? false)));
+
+                    if (null != overviewEntryLockTarget && !(TargetCountMax <= memoryMeasurement?.Target?.Length))
+                        yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
+
+                    if (!(0 < listOverviewEntryToAttack?.Length))
+                        if (0 < droneInLocalSpaceCount)
+                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"return.*bay");
+                        else
+                            Completed = true;
+                }
+                finally {
+                    if (null != listOverviewEntryToAttack)
+                        listOverviewEntryToAttackLastLength = listOverviewEntryToAttack.Length;
+                }
+
+            }
+        }
 
 		public MotionParam Motion => null;
 	}
+
+    public class ReturnDroneTask : IBotTask
+    {
+        public Bot bot;
+
+        public IShipUiModule module;
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                VirtualKeyCode[] toggleKey = { VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R};
+                return toggleKey?.KeyboardPressCombined();
+            }
+        }
+    }
 }

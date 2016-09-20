@@ -142,7 +142,8 @@ namespace Sanderling.ABot.Bot
 
 			yield return saveShipTask;
 
-			yield return this.EnsureIsActive(MemoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.IsHardener ?? false));
+			yield return this.EnsureIsActive(MemoryMeasurementAccu?.ShipUiModule?.Where(module => (module?.TooltipLast?.Value?.IsHardener ?? false)
+                || (module?.TooltipLast?.Value?.IsArmorRepairer ?? false))); // start armor repairer as well
 
 			var moduleUnknown = MemoryMeasurementAccu?.ShipUiModule?.FirstOrDefault(module => null == module?.TooltipLast?.Value);
 
