@@ -138,9 +138,9 @@ namespace Sanderling.ABot.Bot
 		{
 			yield return new EnableInfoPanelCurrentSystem { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
 
-			var saveShipTask = new SaveShipTask { Bot = this };
+			//var saveShipTask = new SaveShipTask { Bot = this };
 
-			yield return saveShipTask;
+			//yield return saveShipTask;
 
 			yield return this.EnsureIsActive(MemoryMeasurementAccu?.ShipUiModule?.Where(module => (module?.TooltipLast?.Value?.IsHardener ?? false)
                 || (module?.TooltipLast?.Value?.IsArmorRepairer ?? false))); // start armor repairer as well
@@ -149,15 +149,15 @@ namespace Sanderling.ABot.Bot
 
 			yield return new BotTask { Motion = moduleUnknown?.MouseMove() };
 
-			if (!saveShipTask.AllowRoam)
-				yield break;
+			//if (!saveShipTask.AllowRoam)
+			//	yield break;
 
 			var combatTask = new CombatTask { bot = this };
 
 			yield return combatTask;
 
-			if (!saveShipTask.AllowAnomalyEnter)
-				yield break;
+			//if (!saveShipTask.AllowAnomalyEnter)
+			//	yield break;
 
 			yield return new UndockTask { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
 

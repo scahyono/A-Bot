@@ -91,7 +91,7 @@ namespace Sanderling.ABot.Bot.Task
                             yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
 
                         if (droneInLocalSpaceIdle)
-                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"engage");
+                            yield return new EngageDroneTask();
                     }
 
                     var overviewEntryLockTarget =
@@ -102,7 +102,10 @@ namespace Sanderling.ABot.Bot.Task
 
                     if (!(0 < listOverviewEntryToAttack?.Length))
                         if (0 < droneInLocalSpaceCount)
-                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"return.*bay");
+                        {
+                            //yield return new ReturnDroneTask();
+                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                        }
                         else
                             Completed = true;
                 }
@@ -130,6 +133,24 @@ namespace Sanderling.ABot.Bot.Task
             get
             {
                 VirtualKeyCode[] toggleKey = { VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R};
+                return toggleKey?.KeyboardPressCombined();
+            }
+        }
+    }
+
+    public class EngageDroneTask : IBotTask
+    {
+        public Bot bot;
+
+        public IShipUiModule module;
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                VirtualKeyCode[] toggleKey = { VirtualKeyCode.VK_F };
                 return toggleKey?.KeyboardPressCombined();
             }
         }
