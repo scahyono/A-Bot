@@ -19,8 +19,7 @@ namespace Sanderling.ABot.Bot.Task
 		static public bool AnomalySuitableGeneral(Interface.MemoryStruct.IListEntry scanResult) =>
 			scanResult?.CellValueFromColumnHeader("Group")?.RegexMatchSuccessIgnoreCase("combat") ?? false;
 
-        static string[] route = {"Romi","Madirmilire","Bahromab","Kudi","Sharji","Sayartchen","Teshi","Ashab","Kehour","Akhragan","Zororzih","Dresi","Aphend"};
-        static string lastJump="";
+        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Akhragan","Zororzih","Gensela","Dresi","Aphend"};
 
     public IEnumerable<IBotTask> Component
 		{
@@ -50,11 +49,9 @@ namespace Sanderling.ABot.Bot.Task
                 if (null == scanResultCombatSite)
                 {
 
-                    int nextSystem = getNextSystem(memoryMeasurement);
-                    if (nextSystem >= 0)
+                    if (getNextSystem(memoryMeasurement) >= 0)
                     {
-                        yield return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == route[nextSystem])
-                            ?.Last().ClickMenuEntryByRegexPattern(bot,"Jump");
+                        yield return JumpToNextSystem(memoryMeasurement, bot);
                     }
                     else {
                         yield return new DiagnosticTask
@@ -70,7 +67,13 @@ namespace Sanderling.ABot.Bot.Task
 			}
 		}
 
-        private int getNextSystem(IMemoryMeasurement memoryMeasurement)
+        static public IBotTask JumpToNextSystem(IMemoryMeasurement memoryMeasurement, Bot bot)
+        { 
+            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == route[getNextSystem(memoryMeasurement)])
+                            ?.Last().ClickMenuEntryByRegexPattern(bot, "Jump");
+        }
+
+        static private int getNextSystem(IMemoryMeasurement memoryMeasurement)
         {
             int currentSystem = getCurrentSystem(memoryMeasurement);
             if (currentSystem == - 1)
@@ -80,7 +83,7 @@ namespace Sanderling.ABot.Bot.Task
             return currentSystem + 1;
         }
 
-        private int getCurrentSystem(IMemoryMeasurement memoryMeasurement)
+        static private int getCurrentSystem(IMemoryMeasurement memoryMeasurement)
         {
             string currentSystemInfo = memoryMeasurement.InfoPanelCurrentSystem.HeaderContent.LabelText.FirstOrDefault().Text;
             for (int i = 0; i < route.Length; i++) {

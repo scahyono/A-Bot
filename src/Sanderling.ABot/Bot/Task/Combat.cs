@@ -8,6 +8,8 @@ using Sanderling.Interface.MemoryStruct;
 using Sanderling.ABot.Parse;
 using Bib3;
 using WindowsInput.Native;
+using BotEngine.Motor;
+using BotEngine.Interface;
 
 namespace Sanderling.ABot.Bot.Task
 {
@@ -34,10 +36,22 @@ namespace Sanderling.ABot.Bot.Task
                 if (!memoryMeasurement.ManeuverStartPossible())
                     yield break;
 
+                string overviewCaption = memoryMeasurement?.WindowOverview?.FirstOrDefault()?.Caption;
+
                 var listOverviewEntryToAttack =
                     memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
                     ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
+
+                var listOverviewEntryToSalvage =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => IsWhite(entry?.MainIcon?.Color) && (entry?.Type.EndsWith("Wreck") ?? false))
+                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
+
+                var listOverviewEntryToAvoid =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
+                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
                 var targetSelected =
@@ -81,6 +95,9 @@ namespace Sanderling.ABot.Bot.Task
                     var droneInLocalSpaceIdle =
                         droneInLocalSpaceSetStatus?.Any(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("idle")) ?? false;
 
+                    if (listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
+                        yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
+
                     if (listOverviewEntryToAttack?.Length > listOverviewEntryToAttackLastLength) // reinforment detected
                         if (0 < droneInLocalSpaceCount)
                             yield return new ReturnDroneTask(); // prevent drone from being targetted
@@ -103,11 +120,22 @@ namespace Sanderling.ABot.Bot.Task
                     if (!(0 < listOverviewEntryToAttack?.Length))
                         if (0 < droneInLocalSpaceCount)
                         {
-                            //yield return new ReturnDroneTask();
-                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                            if (overviewCaption == "Overview (Loot)")
+                            {
+                                if (0 < listOverviewEntryToSalvage.Length)
+                                    yield return listOverviewEntryToSalvage.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"abandon all nearby wrecks");
+                                else
+                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                            }
+                            else
+                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
                         }
-                        else
-                            Completed = true;
+                        else {
+                            if (overviewCaption == "Overview (General)")
+                                Completed = true;
+                            else
+                                yield return new SelectOverviewTab(memoryMeasurement, "General");
+                        }
                 }
                 finally {
                     if (null != listOverviewEntryToAttack)
@@ -117,7 +145,16 @@ namespace Sanderling.ABot.Bot.Task
             }
         }
 
-		public MotionParam Motion => null;
+        private bool IsWhite(ColorORGB color)
+        {
+            if (color.OMilli != 1000) return false;
+            if (color.RMilli != 1000) return false;
+            if (color.GMilli != 1000) return false;
+            if (color.BMilli != 1000) return false;
+            return true;
+        }
+
+        public MotionParam Motion => null;
 	}
 
     public class ReturnDroneTask : IBotTask
@@ -134,6 +171,36 @@ namespace Sanderling.ABot.Bot.Task
             {
                 VirtualKeyCode[] toggleKey = { VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R};
                 return toggleKey?.KeyboardPressCombined();
+            }
+        }
+    }
+
+    public class SelectOverviewTab : IBotTask
+    {
+        public Sanderling.Parse.IMemoryMeasurement MemoryMeasurement;
+        private string Name;
+
+        public SelectOverviewTab(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, string name)
+        {
+            MemoryMeasurement = memoryMeasurement;
+            Name = name;
+        }
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                if (null == MemoryMeasurement?.WindowOverview?.FirstOrDefault()?.PresetTab)
+                    return null;
+
+                foreach (var tab in MemoryMeasurement?.WindowOverview?.FirstOrDefault()?.PresetTab) {
+                    if (tab.Label.Text == Name)
+                        return tab.MouseClick(MouseButtonIdEnum.Left);
+                }
+
+                return null;
             }
         }
     }
