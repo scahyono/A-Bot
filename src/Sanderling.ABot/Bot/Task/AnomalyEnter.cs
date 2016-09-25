@@ -19,7 +19,7 @@ namespace Sanderling.ABot.Bot.Task
 		static public bool AnomalySuitableGeneral(Interface.MemoryStruct.IListEntry scanResult) =>
 			scanResult?.CellValueFromColumnHeader("Group")?.RegexMatchSuccessIgnoreCase("combat") ?? false;
 
-        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Akhragan","Zororzih","Gensela","Dresi","Aphend"};
+        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Murini","Nordar","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
 
     public IEnumerable<IBotTask> Component
 		{
@@ -29,14 +29,6 @@ namespace Sanderling.ABot.Bot.Task
 				var memoryMeasurementAccu = bot?.MemoryMeasurementAccu;
 
 				var memoryMeasurement = memoryMeasurementAtTime?.Value;
-
-                var aboveMainMessage = memoryMeasurement?.AbovemainMessage?.FirstOrDefault();
-                if (null != aboveMainMessage && aboveMainMessage.Text.Contains("Interference from the cloaking")) 
-                    yield return new MoveShip();
-
-                var telecomWindow = memoryMeasurement?.WindowTelecom?.FirstOrDefault();
-                if (null != telecomWindow)
-                    yield return new CloseTelecomWindow(memoryMeasurement);
 
                 if (!memoryMeasurement.ManeuverStartPossible())
 					yield break;
@@ -94,6 +86,29 @@ namespace Sanderling.ABot.Bot.Task
 
         public MotionParam Motion => null;
 	}
+
+    public class CloseOtherWindow : IBotTask
+    {
+        public IMemoryMeasurement MemoryMeasurement;
+
+        public CloseOtherWindow(IMemoryMeasurement memoryMeasurement)
+        {
+            MemoryMeasurement = memoryMeasurement;
+        }
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                if (null == MemoryMeasurement?.WindowOther.FirstOrDefault())
+                    return null;
+
+                return MemoryMeasurement?.WindowOther?.FirstOrDefault()?.ButtonText?.FirstOrDefault()?.RegionInteraction?.MouseClick(MouseButtonIdEnum.Left);
+            }
+        }
+    }
 
     public class CloseTelecomWindow : IBotTask
     {

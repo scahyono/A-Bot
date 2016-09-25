@@ -136,7 +136,21 @@ namespace Sanderling.ABot.Bot
 
 		IEnumerable<IBotTask> RootTaskListComponent()
 		{
-			yield return new EnableInfoPanelCurrentSystem { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
+            var memoryMeasurement = MemoryMeasurementAtTime?.Value;
+
+            var modalWindow = memoryMeasurement?.WindowOther?.FirstOrDefault();
+            if (null != modalWindow)
+                yield return new CloseOtherWindow(memoryMeasurement);
+
+            var aboveMainMessage = memoryMeasurement?.AbovemainMessage?.FirstOrDefault();
+            if (null != aboveMainMessage && aboveMainMessage.Text.Contains("Interference from the cloaking"))
+                yield return new MoveShip();
+
+            var telecomWindow = memoryMeasurement?.WindowTelecom?.FirstOrDefault();
+            if (null != telecomWindow)
+                yield return new CloseTelecomWindow(memoryMeasurement);
+
+            yield return new EnableInfoPanelCurrentSystem { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
 
 			//var saveShipTask = new SaveShipTask { Bot = this };
 
