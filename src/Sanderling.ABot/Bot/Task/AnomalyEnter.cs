@@ -38,6 +38,11 @@ namespace Sanderling.ABot.Bot.Task
                 var scanResultCombatSite =
 					probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
+                var overviewWindow = memoryMeasurement?.WindowOverview?.FirstOrDefault();
+
+                if (null == scanResultCombatSite)
+                    scanResultCombatSite = overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Purity of the Throne") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
+
                 if (null == scanResultCombatSite)
                 {
 
@@ -54,7 +59,7 @@ namespace Sanderling.ABot.Bot.Task
 
                 }
 
-				if (null != scanResultCombatSite)
+                if (null != scanResultCombatSite)
 					yield return scanResultCombatSite.ClickMenuEntryByRegexPattern(bot, ParseStatic.MenuEntryWarpToAtLeafRegexPattern);
 			}
 		}

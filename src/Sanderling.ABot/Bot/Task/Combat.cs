@@ -11,6 +11,7 @@ using WindowsInput.Native;
 using BotEngine.Motor;
 using BotEngine.Interface;
 
+
 namespace Sanderling.ABot.Bot.Task
 {
 	public class CombatTask : IBotTask
@@ -38,6 +39,8 @@ namespace Sanderling.ABot.Bot.Task
 
                 string overviewCaption = memoryMeasurement?.WindowOverview?.FirstOrDefault()?.Caption;
 
+                var inventoryWindow = memoryMeasurement?.WindowInventory?.FirstOrDefault();
+
                 var listOverviewEntryToAttack =
                     memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
@@ -45,7 +48,12 @@ namespace Sanderling.ABot.Bot.Task
                     ?.ToArray();
 
                 var listOverviewEntryToSalvage =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => IsWhite(entry?.MainIcon?.Color) && (entry?.Type.EndsWith("Wreck") ?? false))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Wreck") ?? false))
+                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
+
+                var listOverviewEntryToLoot =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (IsWhite(entry?.MainIcon?.Color) && (entry?.Type == "Cargo Container")))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -77,10 +85,12 @@ namespace Sanderling.ABot.Bot.Task
                     var droneGroupWithNameMatchingPattern = new Func<string, DroneViewEntryGroup>(namePattern =>
                             droneListView?.Entry?.OfType<DroneViewEntryGroup>()?.FirstOrDefault(group => group?.LabelTextLargest()?.Text?.RegexMatchSuccessIgnoreCase(namePattern) ?? false));
 
-                    var droneGroupInBay = droneGroupWithNameMatchingPattern("bay");
+                    var droneGroupInBay = droneGroupWithNameMatchingPattern("combat");
+                    var droneGroupInBaySalvage = droneGroupWithNameMatchingPattern("salvage");
                     var droneGroupInLocalSpace = droneGroupWithNameMatchingPattern("local space");
 
                     var droneInBayCount = droneGroupInBay?.Caption?.Text?.CountFromDroneGroupCaption();
+                    var droneInBaySalvageCount = droneGroupInBaySalvage?.Caption?.Text?.CountFromDroneGroupCaption();
                     var droneInLocalSpaceCount = droneGroupInLocalSpace?.Caption?.Text?.CountFromDroneGroupCaption();
 
                     //	assuming that local space is bottommost group.
@@ -90,12 +100,15 @@ namespace Sanderling.ABot.Bot.Task
                         ?.ToArray();
 
                     var droneInLocalSpaceSetStatus =
-                        setDroneInLocalSpace?.Select(drone => drone?.LabelText?.Select(label => label?.Text?.StatusStringFromDroneEntryText()))?.ConcatNullable()?.WhereNotDefault()?.Distinct()?.ToArray();
+                        setDroneInLocalSpace?.Select(drone => drone?.LabelText?.Select(label => label?.Text))?.ConcatNullable()?.WhereNotDefault()?.Distinct()?.ToArray();
 
                     var droneInLocalSpaceIdle =
                         droneInLocalSpaceSetStatus?.Any(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("idle")) ?? false;
 
-                    if (listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
+                    var droneInLocalSpaceSalvageCount =
+                        droneInLocalSpaceSetStatus?.Count(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("salvage drone"));
+
+                    if (listOverviewEntryToAttack?.Length > 0 && listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
                         yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
 
                     if (listOverviewEntryToAttack?.Length > listOverviewEntryToAttackLastLength) // reinforment detected
@@ -118,24 +131,57 @@ namespace Sanderling.ABot.Bot.Task
                         yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
 
                     if (!(0 < listOverviewEntryToAttack?.Length))
-                        if (0 < droneInLocalSpaceCount)
+                        if (inventoryWindow?.ButtonText?.FirstOrDefault()?.Text == "Loot All")
                         {
-                            if (overviewCaption == "Overview (Loot)")
+                            yield return new LootAll(inventoryWindow);
+                        }
+                        else if (overviewCaption != "Overview (Loot)")
+                            if (0 < droneInLocalSpaceCount)
                             {
-                                if (0 < listOverviewEntryToSalvage.Length)
-                                    yield return listOverviewEntryToSalvage.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"abandon all nearby wrecks");
-                                else
-                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
                             }
                             else
-                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
-                        }
-                        else {
-                            if (overviewCaption == "Overview (General)")
+                            {
                                 Completed = true;
-                            else
-                                yield return new SelectOverviewTab(memoryMeasurement, "General");
+                            }
+                        else if (overviewCaption == "Overview (Loot)")
+                        {
+                            if (0 < listOverviewEntryToSalvage.Length)
+                            {
+                                if (droneInLocalSpaceSalvageCount == 0)
+                                {
+                                    if (droneInLocalSpaceCount > 0)
+                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                    else
+                                        yield return droneGroupInBaySalvage.ClickMenuEntryByRegexPattern(bot, @"launch");
+                                }
+                                if (droneInLocalSpaceIdle)
+                                {
+                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^salvage*");
+                                }
+                                else {
+                                    if (listOverviewEntryToLoot.Length > 0)
+                                    {
+                                        yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
+                                    }
+                                }
+                                //                                    yield return listOverviewEntryToSalvage.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"abandon all nearby wrecks");
+                            }
+                            else {
+                                if (listOverviewEntryToLoot.Length > 0)
+                                {
+                                    yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
+                                }
+                                else if (0 < droneInLocalSpaceCount)
+                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                else {
+                                    yield return new SelectOverviewTab(memoryMeasurement, "General");
+                                }
+                            }
                         }
+                        else
+                            yield return new SelectOverviewTab(memoryMeasurement, "Loot");
+
                 }
                 finally {
                     if (null != listOverviewEntryToAttack)
@@ -219,6 +265,30 @@ namespace Sanderling.ABot.Bot.Task
             {
                 VirtualKeyCode[] toggleKey = { VirtualKeyCode.VK_F };
                 return toggleKey?.KeyboardPressCombined();
+            }
+        }
+    }
+
+
+    public class LootAll : IBotTask
+    {
+        public Sanderling.Parse.IWindowInventory InventoryWindow;
+
+        public LootAll(Sanderling.Parse.IWindowInventory inventoryWindow)
+        {
+            InventoryWindow = inventoryWindow;
+        }
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                if (null == InventoryWindow?.ButtonText?.FirstOrDefault())
+                    return null;
+
+                return InventoryWindow?.ButtonText?.FirstOrDefault()?.RegionInteraction?.MouseClick(MouseButtonIdEnum.Left);
             }
         }
     }
