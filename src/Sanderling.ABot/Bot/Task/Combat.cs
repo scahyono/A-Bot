@@ -62,6 +62,11 @@ namespace Sanderling.ABot.Bot.Task
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
+                var listOverviewEntryToDock =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Station") ?? false))
+                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
+
                 var targetSelected =
                     memoryMeasurement?.Target?.FirstOrDefault(target => target?.IsSelected ?? false);
 
@@ -107,6 +112,27 @@ namespace Sanderling.ABot.Bot.Task
 
                     var droneInLocalSpaceSalvageCount =
                         droneInLocalSpaceSetStatus?.Count(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("salvage drone"));
+
+                    int shield = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Shield ?? 1000;
+                    int armor = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Armor ?? 1000;
+
+                    if (shield == 0)
+                    {
+                        shouldAttackTarget = false;
+                        if (0 < droneInLocalSpaceCount)
+                            yield return new ReturnDroneTask(); // prevent drone from being targetted
+                        else if (listOverviewEntryToDock.Length > 0)
+                            yield return listOverviewEntryToDock?.FirstOrDefault()?.ClickMenuEntryByRegexPattern(bot, @"dock");
+                        else
+                            yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
+                    }
+                    else if (armor == 0) {
+                        shouldAttackTarget = false;
+                        if (listOverviewEntryToDock.Length > 0)
+                            yield return listOverviewEntryToDock?.FirstOrDefault()?.ClickMenuEntryByRegexPattern(bot, @"dock");
+                        else
+                            yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
+                    }
 
                     if (listOverviewEntryToAttack?.Length > 0 && listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
                         yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);

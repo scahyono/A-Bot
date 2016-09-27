@@ -33,15 +33,15 @@ namespace Sanderling.ABot.Bot.Task
                 if (!memoryMeasurement.ManeuverStartPossible())
 					yield break;
 
-				var probeScannerWindow = memoryMeasurement?.WindowProbeScanner?.FirstOrDefault();
-
-                var scanResultCombatSite =
-					probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
-
                 var overviewWindow = memoryMeasurement?.WindowOverview?.FirstOrDefault();
 
+                Interface.MemoryStruct.IListEntry scanResultCombatSite =
+                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Purity of the Throne") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
+
+                var probeScannerWindow = memoryMeasurement?.WindowProbeScanner?.FirstOrDefault();
+
                 if (null == scanResultCombatSite)
-                    scanResultCombatSite = overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Purity of the Throne") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
+                    scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
                 if (null == scanResultCombatSite)
                 {
