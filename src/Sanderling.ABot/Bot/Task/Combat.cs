@@ -39,22 +39,10 @@ namespace Sanderling.ABot.Bot.Task
 
                 string overviewCaption = memoryMeasurement?.WindowOverview?.FirstOrDefault()?.Caption;
 
-                var inventoryWindow = memoryMeasurement?.WindowInventory?.FirstOrDefault();
-
                 var listOverviewEntryToAttack =
                     memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
                     ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
-                    ?.ToArray();
-
-                var listOverviewEntryToSalvage =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Wreck") ?? false))
-                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
-                    ?.ToArray();
-
-                var listOverviewEntryToLoot =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (IsWhite(entry?.MainIcon?.Color) && (entry?.Type == "Cargo Container")))
-                    ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
                 var listOverviewEntryToAvoid =
@@ -91,11 +79,9 @@ namespace Sanderling.ABot.Bot.Task
                             droneListView?.Entry?.OfType<DroneViewEntryGroup>()?.FirstOrDefault(group => group?.LabelTextLargest()?.Text?.RegexMatchSuccessIgnoreCase(namePattern) ?? false));
 
                     var droneGroupInBay = droneGroupWithNameMatchingPattern("combat");
-                    var droneGroupInBaySalvage = droneGroupWithNameMatchingPattern("salvage");
                     var droneGroupInLocalSpace = droneGroupWithNameMatchingPattern("local space");
 
                     var droneInBayCount = droneGroupInBay?.Caption?.Text?.CountFromDroneGroupCaption();
-                    var droneInBaySalvageCount = droneGroupInBaySalvage?.Caption?.Text?.CountFromDroneGroupCaption();
                     var droneInLocalSpaceCount = droneGroupInLocalSpace?.Caption?.Text?.CountFromDroneGroupCaption();
 
                     //	assuming that local space is bottommost group.
@@ -110,9 +96,6 @@ namespace Sanderling.ABot.Bot.Task
                     var droneInLocalSpaceIdle =
                         droneInLocalSpaceSetStatus?.Any(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("idle")) ?? false;
 
-                    var droneInLocalSpaceSalvageCount =
-                        droneInLocalSpaceSetStatus?.Count(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("salvage drone"));
-
                     int shield = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Shield ?? 1000;
                     int armor = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Armor ?? 1000;
 
@@ -120,7 +103,7 @@ namespace Sanderling.ABot.Bot.Task
                     {
                         shouldAttackTarget = false;
                         if (0 < droneInLocalSpaceCount)
-                            yield return new ReturnDroneTask(); // prevent drone from being targetted
+                            yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
                         else if (listOverviewEntryToDock.Length > 0)
                             yield return listOverviewEntryToDock?.FirstOrDefault()?.ClickMenuEntryByRegexPattern(bot, @"dock");
                         else
@@ -139,7 +122,7 @@ namespace Sanderling.ABot.Bot.Task
 
                     if (listOverviewEntryToAttack?.Length > listOverviewEntryToAttackLastLength) // reinforment detected
                         if (0 < droneInLocalSpaceCount)
-                            yield return new ReturnDroneTask(); // prevent drone from being targetted
+                            yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
 
                     if (shouldAttackTarget)
                     {
@@ -147,7 +130,7 @@ namespace Sanderling.ABot.Bot.Task
                             yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
 
                         if (droneInLocalSpaceIdle)
-                            yield return new EngageDroneTask();
+                            yield return DroneTaskExtension.EngageDrone();
                     }
 
                     var overviewEntryLockTarget =
@@ -157,57 +140,7 @@ namespace Sanderling.ABot.Bot.Task
                         yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
 
                     if (!(0 < listOverviewEntryToAttack?.Length))
-                        if (inventoryWindow?.ButtonText?.FirstOrDefault()?.Text == "Loot All")
-                        {
-                            yield return new LootAll(inventoryWindow);
-                        }
-                        else if (overviewCaption != "Overview (Loot)")
-                            if (0 < droneInLocalSpaceCount)
-                            {
-                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
-                            }
-                            else
-                            {
-                                Completed = true;
-                            }
-                        else if (overviewCaption == "Overview (Loot)")
-                        {
-                            if (0 < listOverviewEntryToSalvage.Length)
-                            {
-                                if (droneInLocalSpaceSalvageCount == 0)
-                                {
-                                    if (droneInLocalSpaceCount > 0)
-                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
-                                    else
-                                        yield return droneGroupInBaySalvage.ClickMenuEntryByRegexPattern(bot, @"launch");
-                                }
-                                if (droneInLocalSpaceIdle)
-                                {
-                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^salvage*");
-                                }
-                                else {
-                                    if (listOverviewEntryToLoot.Length > 0)
-                                    {
-                                        yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
-                                    }
-                                }
-                                //                                    yield return listOverviewEntryToSalvage.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"abandon all nearby wrecks");
-                            }
-                            else {
-                                if (listOverviewEntryToLoot.Length > 0)
-                                {
-                                    yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
-                                }
-                                else if (0 < droneInLocalSpaceCount)
-                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
-                                else {
-                                    yield return new SelectOverviewTab(memoryMeasurement, "General");
-                                }
-                            }
-                        }
-                        else
-                            yield return new SelectOverviewTab(memoryMeasurement, "Loot");
-
+                            Completed = true;
                 }
                 finally {
                     if (null != listOverviewEntryToAttack)
@@ -217,105 +150,6 @@ namespace Sanderling.ABot.Bot.Task
             }
         }
 
-        private bool IsWhite(ColorORGB color)
-        {
-            if (color.OMilli != 1000) return false;
-            if (color.RMilli != 1000) return false;
-            if (color.GMilli != 1000) return false;
-            if (color.BMilli != 1000) return false;
-            return true;
-        }
-
         public MotionParam Motion => null;
 	}
-
-    public class ReturnDroneTask : IBotTask
-    {
-        public Bot bot;
-
-        public IShipUiModule module;
-
-        public IEnumerable<IBotTask> Component => null;
-
-        public MotionParam Motion
-        {
-            get
-            {
-                VirtualKeyCode[] toggleKey = { VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R};
-                return toggleKey?.KeyboardPressCombined();
-            }
-        }
-    }
-
-    public class SelectOverviewTab : IBotTask
-    {
-        public Sanderling.Parse.IMemoryMeasurement MemoryMeasurement;
-        private string Name;
-
-        public SelectOverviewTab(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, string name)
-        {
-            MemoryMeasurement = memoryMeasurement;
-            Name = name;
-        }
-
-        public IEnumerable<IBotTask> Component => null;
-
-        public MotionParam Motion
-        {
-            get
-            {
-                if (null == MemoryMeasurement?.WindowOverview?.FirstOrDefault()?.PresetTab)
-                    return null;
-
-                foreach (var tab in MemoryMeasurement?.WindowOverview?.FirstOrDefault()?.PresetTab) {
-                    if (tab.Label.Text == Name)
-                        return tab.MouseClick(MouseButtonIdEnum.Left);
-                }
-
-                return null;
-            }
-        }
-    }
-
-    public class EngageDroneTask : IBotTask
-    {
-        public Bot bot;
-
-        public IShipUiModule module;
-
-        public IEnumerable<IBotTask> Component => null;
-
-        public MotionParam Motion
-        {
-            get
-            {
-                VirtualKeyCode[] toggleKey = { VirtualKeyCode.VK_F };
-                return toggleKey?.KeyboardPressCombined();
-            }
-        }
-    }
-
-
-    public class LootAll : IBotTask
-    {
-        public Sanderling.Parse.IWindowInventory InventoryWindow;
-
-        public LootAll(Sanderling.Parse.IWindowInventory inventoryWindow)
-        {
-            InventoryWindow = inventoryWindow;
-        }
-
-        public IEnumerable<IBotTask> Component => null;
-
-        public MotionParam Motion
-        {
-            get
-            {
-                if (null == InventoryWindow?.ButtonText?.FirstOrDefault())
-                    return null;
-
-                return InventoryWindow?.ButtonText?.FirstOrDefault()?.RegionInteraction?.MouseClick(MouseButtonIdEnum.Left);
-            }
-        }
-    }
 }

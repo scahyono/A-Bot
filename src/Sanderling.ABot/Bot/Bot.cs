@@ -170,12 +170,16 @@ namespace Sanderling.ABot.Bot
 
 			yield return combatTask;
 
-			//if (!saveShipTask.AllowAnomalyEnter)
-			//	yield break;
+            var cleanUpTask = new CleanUpTask { bot = this };
 
-			yield return new UndockTask { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
+            yield return cleanUpTask;
 
-			if (combatTask.Completed)
+            //if (!saveShipTask.AllowAnomalyEnter)
+            //	yield break;
+
+            yield return new UndockTask { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
+
+			if (combatTask.Completed && cleanUpTask.Completed)
 				yield return new AnomalyEnter { bot = this };
 		}
 	}
