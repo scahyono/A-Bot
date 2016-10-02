@@ -40,7 +40,7 @@ namespace Sanderling.ABot.Bot.Task
                 string overviewCaption = memoryMeasurement?.WindowOverview?.FirstOrDefault()?.Caption;
 
                 var listOverviewEntryToAttack =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (!entry?.CellValueFromColumnHeader("Type")?.EndsWith("Seeker") ?? false))
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
                     ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();

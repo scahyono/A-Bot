@@ -19,7 +19,7 @@ namespace Sanderling.ABot.Bot.Task
 		static public bool AnomalySuitableGeneral(Interface.MemoryStruct.IListEntry scanResult) =>
 			scanResult?.CellValueFromColumnHeader("Group")?.RegexMatchSuccessIgnoreCase("combat") ?? false;
 
-        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Murini","Nordar","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
+        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Elmed","Ustnia","Minin","Askonak","Murini","Nordar","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
 
     public IEnumerable<IBotTask> Component
 		{
