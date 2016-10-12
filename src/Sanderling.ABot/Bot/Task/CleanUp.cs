@@ -11,7 +11,6 @@ using WindowsInput.Native;
 using BotEngine.Motor;
 using BotEngine.Interface;
 
-
 namespace Sanderling.ABot.Bot.Task
 {
 	public class CleanUpTask : IBotTask
@@ -42,11 +41,7 @@ namespace Sanderling.ABot.Bot.Task
 
                 var inventoryWindow = memoryMeasurement?.WindowInventory?.FirstOrDefault();
 
-                var listOverviewEntryToAttack =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.MainIcon?.Color?.IsRed() ?? false)
-                    ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
-                    ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
-                    ?.ToArray();
+                var listOverviewEntryToAttack = CombatTask.GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToSalvage =
                     memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Wreck") ?? false))

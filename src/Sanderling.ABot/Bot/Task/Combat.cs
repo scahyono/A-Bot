@@ -11,7 +11,6 @@ using WindowsInput.Native;
 using BotEngine.Motor;
 using BotEngine.Interface;
 
-
 namespace Sanderling.ABot.Bot.Task
 {
 	public class CombatTask : IBotTask
@@ -39,14 +38,10 @@ namespace Sanderling.ABot.Bot.Task
 
                 string overviewCaption = memoryMeasurement?.WindowOverview?.FirstOrDefault()?.Caption;
 
-                var listOverviewEntryToAttack =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (!entry?.CellValueFromColumnHeader("Type")?.EndsWith("Seeker") ?? false))
-                    ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
-                    ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
-                    ?.ToArray();
+                var listOverviewEntryToAttack = GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToAvoid =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.EndsWith("Gate") && !entry.Type.EndsWith("Sanctum") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -148,6 +143,14 @@ namespace Sanderling.ABot.Bot.Task
                 }
 
             }
+        }
+
+        public static Sanderling.Parse.IOverviewEntry[] GetListOverviewToAttack(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, Bot bot)
+        {
+            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (entry?.CellValueFromColumnHeader("Type") != "Circadian Seeker"))
+                    ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
+                    ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                    ?.ToArray();
         }
 
         public MotionParam Motion => null;
