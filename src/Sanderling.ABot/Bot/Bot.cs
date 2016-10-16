@@ -56,7 +56,7 @@ namespace Sanderling.ABot.Bot
 
 		void MemorizeStepInput(BotStepInput input)
 		{
-			ConfigSerialAndStruct = input?.ConfigSerial?.String?.DeserializeIfDifferent(ConfigSerialAndStruct) ?? ConfigSerialAndStruct;
+			ConfigSerialAndStruct = (input?.ConfigSerial?.String).DeserializeIfDifferent(ConfigSerialAndStruct);
 
 			MemoryMeasurementAtTime = input?.FromProcessMemoryMeasurement?.MapValue(measurement => measurement?.Parse());
 
@@ -136,13 +136,15 @@ namespace Sanderling.ABot.Bot
 
 		IEnumerable<IBotTask> RootTaskListComponent()
 		{
+			yield return new BotTask { Component = EnumerateConfigDiagnostics() };
+
 			yield return new EnableInfoPanelCurrentSystem { MemoryMeasurement = MemoryMeasurementAtTime?.Value };
 
 			var saveShipTask = new SaveShipTask { Bot = this };
 
 			yield return saveShipTask;
 
-			yield return this.EnsureIsActive(MemoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.IsHardener ?? false));
+			yield return this.EnsureIsActive(MemoryMeasurementAccu?.ShipUiModule?.Where(module => module.ShouldBeActivePermanent(this)));
 
 			var moduleUnknown = MemoryMeasurementAccu?.ShipUiModule?.FirstOrDefault(module => null == module?.TooltipLast?.Value);
 
@@ -162,6 +164,17 @@ namespace Sanderling.ABot.Bot
 
 			if (combatTask.Completed)
 				yield return new AnomalyEnter { bot = this };
+		}
+
+		IEnumerable<IBotTask> EnumerateConfigDiagnostics()
+		{
+			var configDeserializeException = ConfigSerialAndStruct.Key?.Exception;
+
+			if (null != configDeserializeException)
+				yield return new DiagnosticTask { MessageText = "error parsing configuration: " + configDeserializeException.Message };
+			else
+				if (null == ConfigSerialAndStruct.Value)
+				yield return new DiagnosticTask { MessageText = "warning: no configuration supplied." };
 		}
 	}
 }
