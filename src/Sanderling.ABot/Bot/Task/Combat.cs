@@ -121,6 +121,11 @@ namespace Sanderling.ABot.Bot.Task
                             yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
                     }
 
+                    bool droneDamaged = setDroneInLocalSpace?.Any(entry => entry?.Hitpoints?.Shield < 750) ?? false;
+
+                    if (droneDamaged)
+                        yield return new ReturnDroneTask();
+
                     if (listOverviewEntryToAttack?.Length > 0 && listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
                         yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
 
@@ -147,10 +152,7 @@ namespace Sanderling.ABot.Bot.Task
                         yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
                     }
 
-                    var damagedDrone = setDroneInLocalSpace?.Where(entry => entry?.Hitpoints?.Shield < 1000)?.FirstOrDefault();
-                    if (null != damagedDrone)
-                        yield return damagedDrone.ClickMenuEntryByRegexPattern(bot, @"^return\s*to\s*drone\s*bay");
-                    else if (null == indication && entryToAttackSelected)
+                    if (null == indication && entryToAttackSelected)
                     { // keep optimal distance 
                         yield return new KeepDistance();
                     }
