@@ -161,6 +161,9 @@ namespace Sanderling.ABot.Bot
 
 			var moduleUnknown = MemoryMeasurementAccu?.ShipUiModule?.FirstOrDefault(module => null == module?.TooltipLast?.Value);
 
+            if (null == memoryMeasurement?.WindowDroneView?.First())
+                yield break; // are you in escape pod?
+
 			yield return new BotTask { Motion = moduleUnknown?.MouseMove() };
 
 			//if (!saveShipTask.AllowRoam)

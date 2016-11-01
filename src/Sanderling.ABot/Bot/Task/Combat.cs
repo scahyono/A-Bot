@@ -27,7 +27,7 @@ namespace Sanderling.ABot.Bot.Task
 		public IEnumerable<IBotTask> Component
 		{
 			get
-			{
+            {
                 var memoryMeasurementAtTime = bot?.MemoryMeasurementAtTime;
                 var memoryMeasurementAccu = bot?.MemoryMeasurementAccu;
 
@@ -40,13 +40,15 @@ namespace Sanderling.ABot.Bot.Task
 
                 var listOverviewEntryToAttack = GetListOverviewToAttack(memoryMeasurement, bot);
 
+                var entryToAttackSelected = listOverviewEntryToAttack.Any(entry => entry?.IsSelected ?? false);
+
                 var listOverviewEntryToAvoid =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.EndsWith("Gate") && !entry.Type.EndsWith("Container") && !entry.Type.EndsWith("Sanctum") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => ToAvoid(entry))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
                 var listOverviewEntryToDock =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Station") ?? false))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type?.EndsWith("Station") ?? false))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -110,7 +112,8 @@ namespace Sanderling.ABot.Bot.Task
                         else
                             yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
                     }
-                    else if (shield == 0) {
+                    else if (shield == 0)
+                    {
                         shouldAttackTarget = false;
                         if (listOverviewEntryToDock.Length > 0)
                             yield return listOverviewEntryToDock?.FirstOrDefault()?.ClickMenuEntryByRegexPattern(bot, @"dock");
@@ -129,13 +132,7 @@ namespace Sanderling.ABot.Bot.Task
                     {
                         if (0 < droneInBayCount && droneInLocalSpaceCount < 5)
                         {
-                            if (null == indication)
-                            { // keep optimal distance 
-                                yield return new KeepDistance();
-                            }
-                            else {
-                                yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
-                            }
+                            yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
                         }
 
                         if (droneInLocalSpaceIdle)
@@ -150,15 +147,43 @@ namespace Sanderling.ABot.Bot.Task
                         yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
                     }
 
+                    var damagedDrone = setDroneInLocalSpace?.Where(entry => entry?.Hitpoints?.Shield < 1000)?.FirstOrDefault();
+                    if (null != damagedDrone)
+                        yield return damagedDrone.ClickMenuEntryByRegexPattern(bot, @"^return\s*to\s*drone\s*bay");
+                    else if (null == indication && entryToAttackSelected)
+                    { // keep optimal distance 
+                        yield return new KeepDistance();
+                    }
+
                     if (!(0 < listOverviewEntryToAttack?.Length))
-                            Completed = true;
+                        Completed = true;
                 }
-                finally {
+                finally
+                {
                     if (null != listOverviewEntryToAttack)
                         listOverviewEntryToAttackLastLength = listOverviewEntryToAttack.Length;
                 }
 
             }
+        }
+
+        private static bool ToAvoid(Sanderling.Parse.IOverviewEntry entry)
+        {
+            if (entry?.MainIcon?.Color?.IsRed() ?? true) return false;
+            if (entry == null) return false;
+            if (entry.Type == null) return false;
+            if (entry.Type.StartsWith("Amarr")) return false;
+            if (entry.Type.StartsWith("Caldari")) return false;
+            if (entry.Type.StartsWith("Minmatar")) return false;
+            if (entry.Type.StartsWith("Gallente")) return false;
+            if (entry.Type.StartsWith("Stargate")) return false;
+            if (entry.Type.EndsWith("Gate")) return false;
+            if (entry.Type.EndsWith("Container")) return false;
+            if (entry.Type.EndsWith("Sanctum")) return false;
+            if (entry.Type.StartsWith("Celestial")) return false;
+            if (entry.Type == "Astrahus") return false;
+            if (entry.Type == "Fortizar") return false;
+            return true;
         }
 
         public static Sanderling.Parse.IOverviewEntry[] GetListOverviewToAttack(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, Bot bot)

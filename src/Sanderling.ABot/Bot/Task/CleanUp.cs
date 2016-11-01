@@ -44,7 +44,7 @@ namespace Sanderling.ABot.Bot.Task
                 var listOverviewEntryToAttack = CombatTask.GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToSalvage =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type.EndsWith("Wreck") ?? false))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type?.EndsWith("Wreck") ?? false))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -129,7 +129,10 @@ namespace Sanderling.ABot.Bot.Task
                                 if (droneInLocalSpaceSalvageCount == 0)
                                 {
                                     if (droneInLocalSpaceCount > 0)
-                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                        if (droneInLocalSpaceIdle)
+                                            yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
+                                        else
+                                            yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
                                     else
                                         yield return droneGroupInBaySalvage.ClickMenuEntryByRegexPattern(bot, @"launch");
                                 }
