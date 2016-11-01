@@ -53,6 +53,9 @@ namespace Sanderling.ABot.Bot.Task
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
+                Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type") == "Acceleration Gate")?.FirstOrDefault();
+
                 try
                 {
 
@@ -92,7 +95,15 @@ namespace Sanderling.ABot.Bot.Task
                         else if (overviewCaption != "Overview (Loot)")
                             if (0 < droneInLocalSpaceCount)
                             {
-                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
+                                if (null == scanResultAccelerationGate) {                               
+                                    yield return new SelectOverviewTab(memoryMeasurement, "Loot");
+                                }
+                                else {
+                                    if (droneInLocalSpaceIdle)
+                                        yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
+                                    else
+                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                }
                             }
                             else
                             {
@@ -101,7 +112,12 @@ namespace Sanderling.ABot.Bot.Task
                         else if (Environment.TickCount - lastCleanUpListChanged > 5 * 60 * 1000) // 5 minutes limit
                         { // if taking too long cleaning up one wreak/loot then warp out! We are color blind. So, we cannot detect other people wrecks.
                             if (0 < droneInLocalSpaceCount)
-                                yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                            {
+                                if (droneInLocalSpaceIdle)
+                                    yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
+                                else
+                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                            }
                             else {
                                 yield return new SelectOverviewTab(memoryMeasurement, "General");
                             }
@@ -135,7 +151,12 @@ namespace Sanderling.ABot.Bot.Task
                                     yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
                                 }
                                 else if (0 < droneInLocalSpaceCount)
-                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                {
+                                    if (droneInLocalSpaceIdle)
+                                        yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
+                                    else
+                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
+                                }
                                 else {
                                     yield return new SelectOverviewTab(memoryMeasurement, "General");
                                 }

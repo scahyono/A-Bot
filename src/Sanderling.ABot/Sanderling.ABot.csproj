@@ -11,6 +11,7 @@
     <AssemblyName>Sanderling.ABot</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,9 +57,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="WindowsInput, Version=1.0.4.0, Culture=neutral, PublicKeyToken=9b287f7dc5073cad, processorArchitecture=MSIL">
+    <Reference Include="WindowsInput">
       <HintPath>..\packages\InputSimulator.1.0.4.0\lib\net20\WindowsInput.dll</HintPath>
-      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -70,10 +70,12 @@
     <Compile Include="Bot\Config.cs" />
     <Compile Include="Bot\Memory\OverviewMemory.cs" />
     <Compile Include="Bot\Task\AnomalyEnter.cs" />
+    <Compile Include="Bot\Task\CleanUp.cs" />
     <Compile Include="Bot\Task\Combat.cs" />
     <Compile Include="Bot\Task\DiagnosticTask.cs" />
     <Compile Include="Bot\Task\EnableInfoPanelCurrentSystem.cs" />
     <Compile Include="Bot\Task\Menu.cs" />
+    <Compile Include="Bot\Task\Drone.cs" />
     <Compile Include="Bot\Task\Module.cs" />
     <Compile Include="Bot\Task\Retreat.cs" />
     <Compile Include="Bot\Task\SaveShip.cs" />
@@ -86,9 +88,12 @@
     <Compile Include="StringAtPath.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\NugetPackageRestore.1.0.5\build\net40\NugetPackageRestore.targets" Condition="Exists('..\packages\NugetPackageRestore.1.0.5\build\net40\NugetPackageRestore.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

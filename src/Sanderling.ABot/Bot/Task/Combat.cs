@@ -41,7 +41,7 @@ namespace Sanderling.ABot.Bot.Task
                 var listOverviewEntryToAttack = GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToAvoid =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.EndsWith("Gate") && !entry.Type.EndsWith("Sanctum") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => !entry.MainIcon.Color.IsRed() && !entry.Type.StartsWith("Amarr") && !entry.Type.StartsWith("Caldari") && !entry.Type.StartsWith("Minmatar") && !entry.Type.StartsWith("Gallente") && !entry.Type.StartsWith("Stargate") && !entry.Type.EndsWith("Gate") && !entry.Type.EndsWith("Container") && !entry.Type.EndsWith("Sanctum") && !entry.Type.StartsWith("Celestial") && entry.Type!= "Astrahus" && entry.Type != "Fortizar")
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -59,14 +59,20 @@ namespace Sanderling.ABot.Bot.Task
                 var setModuleWeapon =
                     memoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.IsWeapon ?? false);
 
+                var indication = memoryMeasurement?.ShipUi?.Indication?.LabelText?.FirstOrDefault()?.Text;
+
                 try
                 {
 
                     if (null != targetSelected)
                         if (shouldAttackTarget)
+                        {
                             yield return bot.EnsureIsActive(setModuleWeapon);
+                        }
                         else
+                        {
                             yield return targetSelected.ClickMenuEntryByRegexPattern(bot, "unlock");
+                        }
 
                     var droneListView = memoryMeasurement?.WindowDroneView?.FirstOrDefault()?.ListView;
 
@@ -94,7 +100,7 @@ namespace Sanderling.ABot.Bot.Task
                     int shield = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Shield ?? 1000;
                     int armor = memoryMeasurement?.ShipUi?.HitpointsAndEnergy?.Armor ?? 1000;
 
-                    if (shield == 0)
+                    if (shield < 200)
                     {
                         shouldAttackTarget = false;
                         if (0 < droneInLocalSpaceCount)
@@ -104,7 +110,7 @@ namespace Sanderling.ABot.Bot.Task
                         else
                             yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
                     }
-                    else if (armor == 0) {
+                    else if (shield == 0) {
                         shouldAttackTarget = false;
                         if (listOverviewEntryToDock.Length > 0)
                             yield return listOverviewEntryToDock?.FirstOrDefault()?.ClickMenuEntryByRegexPattern(bot, @"dock");
@@ -122,7 +128,15 @@ namespace Sanderling.ABot.Bot.Task
                     if (shouldAttackTarget)
                     {
                         if (0 < droneInBayCount && droneInLocalSpaceCount < 5)
-                            yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
+                        {
+                            if (null == indication)
+                            { // keep optimal distance 
+                                yield return new KeepDistance();
+                            }
+                            else {
+                                yield return droneGroupInBay.ClickMenuEntryByRegexPattern(bot, @"launch");
+                            }
+                        }
 
                         if (droneInLocalSpaceIdle)
                             yield return DroneTaskExtension.EngageDrone();
@@ -132,7 +146,9 @@ namespace Sanderling.ABot.Bot.Task
                         listOverviewEntryToAttack?.FirstOrDefault(entry => !((entry?.MeTargeted ?? false) || (entry?.MeTargeting ?? false)));
 
                     if (null != overviewEntryLockTarget && !(TargetCountMax <= memoryMeasurement?.Target?.Length))
+                    {
                         yield return overviewEntryLockTarget.ClickMenuEntryByRegexPattern(bot, @"^lock\s*target");
+                    }
 
                     if (!(0 < listOverviewEntryToAttack?.Length))
                             Completed = true;

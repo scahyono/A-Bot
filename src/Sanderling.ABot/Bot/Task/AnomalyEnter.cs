@@ -35,15 +35,22 @@ namespace Sanderling.ABot.Bot.Task
 
                 var overviewWindow = memoryMeasurement?.WindowOverview?.FirstOrDefault();
 
+                Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
+                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type") == "Acceleration Gate")?.FirstOrDefault();
+
                 Interface.MemoryStruct.IListEntry scanResultCombatSite =
-                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Purity of the Throne") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
+                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Blood Raider Gauntlet") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
 
                 var probeScannerWindow = memoryMeasurement?.WindowProbeScanner?.FirstOrDefault();
 
                 if (null == scanResultCombatSite)
                     scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
-                if (null == scanResultCombatSite)
+                if (null != scanResultAccelerationGate)
+                {
+                    yield return scanResultAccelerationGate.ClickMenuEntryByRegexPattern(bot, "Activate Gate");
+                }
+                else if (null == scanResultCombatSite)
                 {
 
                     if (getNextSystem(memoryMeasurement) >= 0)
@@ -57,11 +64,11 @@ namespace Sanderling.ABot.Bot.Task
                         };
                     }
 
+                } else
+                {
+                    yield return scanResultCombatSite.ClickMenuEntryByRegexPattern(bot, ParseStatic.MenuEntryWarpToAtLeafRegexPattern);
                 }
-
-                if (null != scanResultCombatSite)
-					yield return scanResultCombatSite.ClickMenuEntryByRegexPattern(bot, ParseStatic.MenuEntryWarpToAtLeafRegexPattern);
-			}
+            }
 		}
 
         static public IBotTask JumpToNextSystem(IMemoryMeasurement memoryMeasurement, Bot bot)
@@ -149,6 +156,22 @@ namespace Sanderling.ABot.Bot.Task
             get
             {
                 VirtualKeyCode[] toggleKey = { VirtualKeyCode.ADD };
+                return toggleKey?.KeyboardPressCombined();
+            }
+        }
+    }
+
+    public class KeepDistance : IBotTask
+    {
+        public Bot bot;
+
+        public IEnumerable<IBotTask> Component => null;
+
+        public MotionParam Motion
+        {
+            get
+            {
+                VirtualKeyCode[] toggleKey = { VirtualKeyCode.VK_E };
                 return toggleKey?.KeyboardPressCombined();
             }
         }
