@@ -14,6 +14,7 @@ namespace Sanderling.ABot.Bot
 	public class Bot
 	{
 		static public readonly Func<Int64> GetTimeMilli = Bib3.Glob.StopwatchZaitMiliSictInt;
+        static public bool cargoFull = false;
 
 		public BotStepInput StepLastInput { private set; get; }
 
@@ -138,9 +139,13 @@ namespace Sanderling.ABot.Bot
 		{
             var memoryMeasurement = MemoryMeasurementAtTime?.Value;
 
-            var modalWindow = memoryMeasurement?.WindowOther?.FirstOrDefault();
+            Interface.MemoryStruct.MessageBox modalWindow = (Interface.MemoryStruct.MessageBox) memoryMeasurement?.WindowOther?.FirstOrDefault();
             if (null != modalWindow)
+            {
+                if (modalWindow.TopCaptionText == "Not Enough Cargo Space" || modalWindow.TopCaptionText == "Information")
+                    cargoFull = true;
                 yield return new CloseOtherWindow(memoryMeasurement);
+            }
 
             var aboveMainMessage = memoryMeasurement?.AbovemainMessage?.FirstOrDefault();
             if (null != aboveMainMessage && aboveMainMessage.Text.Contains("Interference from the cloaking"))

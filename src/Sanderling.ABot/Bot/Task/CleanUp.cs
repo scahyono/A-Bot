@@ -44,12 +44,12 @@ namespace Sanderling.ABot.Bot.Task
                 var listOverviewEntryToAttack = CombatTask.GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToSalvage =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type?.EndsWith("Wreck") ?? false))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => ((entry?.Type?.EndsWith("Wreck") ?? false) && !Bot.cargoFull))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
                 var listOverviewEntryToLoot =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type == "Cargo Container"))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type == "Cargo Container" && !Bot.cargoFull))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -88,7 +88,7 @@ namespace Sanderling.ABot.Bot.Task
                         droneInLocalSpaceSetStatus?.Count(droneStatus => droneStatus.RegexMatchSuccessIgnoreCase("salvage drone"));
 
                     if (!(0 < listOverviewEntryToAttack?.Length))
-                        if (inventoryWindow?.ButtonText?.FirstOrDefault()?.Text == "Loot All")
+                        if (inventoryWindow?.ButtonText?.FirstOrDefault()?.Text == "Loot All" && !Bot.cargoFull)
                         {
                             yield return new LootAll(inventoryWindow);
                         }

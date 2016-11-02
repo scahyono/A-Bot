@@ -53,7 +53,7 @@ namespace Sanderling.ABot.Bot.Task
                 else if (null == scanResultCombatSite)
                 {
 
-                    if (getNextSystem(memoryMeasurement) >= 0)
+                    if (getNextSystem(memoryMeasurement) >= 0 )
                     {
                         yield return JumpToNextSystem(memoryMeasurement, bot);
                     }
@@ -72,14 +72,17 @@ namespace Sanderling.ABot.Bot.Task
 		}
 
         static public IBotTask JumpToNextSystem(IMemoryMeasurement memoryMeasurement, Bot bot)
-        { 
-            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == route[getNextSystem(memoryMeasurement)])
+        {
+            int nextSystem = getNextSystem(memoryMeasurement);
+            if (nextSystem < 0) return null;
+            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == route[nextSystem])
                             ?.Last().ClickMenuEntryByRegexPattern(bot, "Jump");
         }
 
         static private int getNextSystem(IMemoryMeasurement memoryMeasurement)
         {
             int currentSystem = getCurrentSystem(memoryMeasurement);
+            if (Bot.cargoFull && route[currentSystem] == "Aphend") return -1;
             if (currentSystem == - 1)
                 return -1;
             if (currentSystem == route.Length - 1)
