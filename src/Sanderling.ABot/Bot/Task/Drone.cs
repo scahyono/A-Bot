@@ -31,7 +31,7 @@ namespace Sanderling.ABot.Bot.Task
         {
             get
             {
-                VirtualKeyCode[] toggleKey = { VirtualKeyCode.VK_F };
+                VirtualKeyCode[] toggleKey = { VirtualKeyCode.TAB, VirtualKeyCode.VK_F };
                 return toggleKey?.KeyboardPressCombined();
             }
         }
@@ -49,7 +49,7 @@ namespace Sanderling.ABot.Bot.Task
         {
             get
             {
-                VirtualKeyCode[] toggleKey = { VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R };
+                VirtualKeyCode[] toggleKey = { VirtualKeyCode.TAB, VirtualKeyCode.SHIFT, VirtualKeyCode.VK_R };
                 return toggleKey?.KeyboardPressCombined();
             }
         }

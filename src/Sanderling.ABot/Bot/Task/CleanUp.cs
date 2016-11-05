@@ -44,12 +44,12 @@ namespace Sanderling.ABot.Bot.Task
                 var listOverviewEntryToAttack = CombatTask.GetListOverviewToAttack(memoryMeasurement, bot);
 
                 var listOverviewEntryToSalvage =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => ((entry?.Type?.EndsWith("Wreck") ?? false) && !Bot.cargoFull))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => ((entry?.Type?.EndsWith("Wreck") ?? false) && (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") && !Bot.cargoFull))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
                 var listOverviewEntryToLoot =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type == "Cargo Container" && !Bot.cargoFull))
+                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.Type == "Cargo Container" && (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") && !Bot.cargoFull))
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
@@ -138,7 +138,7 @@ namespace Sanderling.ABot.Bot.Task
                                 }
                                 if (droneInLocalSpaceIdle)
                                 {
-                                    yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^salvage*");
+                                    yield return new EngageDroneTask();
                                 }
                                 else {
                                     if (listOverviewEntryToLoot.Length > 0)
