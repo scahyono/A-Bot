@@ -7,6 +7,7 @@ using Sanderling.ABot.Parse;
 using System;
 using BotEngine.Motor;
 using WindowsInput.Native;
+using System.Text.RegularExpressions;
 
 namespace Sanderling.ABot.Bot.Task
 {
@@ -19,7 +20,7 @@ namespace Sanderling.ABot.Bot.Task
 		static public bool AnomalySuitableGeneral(Interface.MemoryStruct.IListEntry scanResult) =>
 			scanResult?.CellValueFromColumnHeader("Group")?.RegexMatchSuccessIgnoreCase("combat") ?? false;
 
-        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Elmed","Ustnia","Minin","Askonak","Murini","Nordar","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
+        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Elmed","Ustnia","Minin","Askonak","Murini","Nordar","Hostakoh","Yooh","Turba","Sonama","Suner","Masanuh","Leva","Amdonen","Dantan","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
 
     public IEnumerable<IBotTask> Component
 		{
@@ -35,6 +36,8 @@ namespace Sanderling.ABot.Bot.Task
 
                 var overviewWindow = memoryMeasurement?.WindowOverview?.FirstOrDefault();
 
+                var nextSystemInRouteLabel = memoryMeasurement?.InfoPanelRoute?.NextLabel?.Text;
+
                 Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
                     overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type") == "Acceleration Gate")?.FirstOrDefault();
 
@@ -46,7 +49,13 @@ namespace Sanderling.ABot.Bot.Task
                 if (null == scanResultCombatSite)
                     scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
-                if (null != scanResultAccelerationGate)
+                if (null != nextSystemInRouteLabel)
+                {
+                    var nextSystemInRoute = nextSystemInRouteLabel.Split('>')[2].Split('<')[0];
+                    yield return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == nextSystemInRoute)
+                            ?.Last().ClickMenuEntryByRegexPattern(bot, "Jump");
+                }
+                else if (null != scanResultAccelerationGate)
                 {
                     yield return scanResultAccelerationGate.ClickMenuEntryByRegexPattern(bot, "Activate Gate");
                 }
