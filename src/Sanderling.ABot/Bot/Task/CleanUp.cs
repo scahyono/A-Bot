@@ -53,9 +53,6 @@ namespace Sanderling.ABot.Bot.Task
                     ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
 
-                Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
-                    memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type") == "Acceleration Gate")?.FirstOrDefault();
-
                 try
                 {
 
@@ -95,15 +92,7 @@ namespace Sanderling.ABot.Bot.Task
                         else if (overviewCaption != "Overview (Loot)")
                             if (0 < droneInLocalSpaceCount)
                             {
-                                if (null == scanResultAccelerationGate) {                               
-                                    yield return new SelectOverviewTab(memoryMeasurement, "Loot");
-                                }
-                                else {
-                                    if (droneInLocalSpaceIdle)
-                                        yield return DroneTaskExtension.ReturnDrone(); // prevent drone from being targetted
-                                    else
-                                        yield return droneGroupInLocalSpace.ClickMenuEntryByRegexPattern(bot, @"^scoop*");
-                                }
+                                yield return new SelectOverviewTab(memoryMeasurement, "Loot");
                             }
                             else
                             {

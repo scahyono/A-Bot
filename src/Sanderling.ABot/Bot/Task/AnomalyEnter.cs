@@ -39,7 +39,7 @@ namespace Sanderling.ABot.Bot.Task
                 var nextSystemInRouteLabel = memoryMeasurement?.InfoPanelRoute?.NextLabel?.Text;
 
                 Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
-                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type") == "Acceleration Gate")?.FirstOrDefault();
+                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type").EndsWith("Acceleration Gate"))?.FirstOrDefault();
 
                 Interface.MemoryStruct.IListEntry scanResultCombatSite =
                     overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Blood Raider Gauntlet") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
