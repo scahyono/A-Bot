@@ -157,7 +157,7 @@ namespace Sanderling.ABot.Bot.Task
                         yield return new KeepDistance();
                     }
 
-                    if (0 == listOverviewEntryToAttack?.Length && 0 == listOverviewEntryToAttackLastLength)
+                    if (!(0 < listOverviewEntryToAttack?.Length))
                         Completed = true;
                 }
                 finally
