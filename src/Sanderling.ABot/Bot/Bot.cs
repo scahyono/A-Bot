@@ -139,10 +139,10 @@ namespace Sanderling.ABot.Bot
 		{
             var memoryMeasurement = MemoryMeasurementAtTime?.Value;
 
-            Interface.MemoryStruct.MessageBox modalWindow = (Interface.MemoryStruct.MessageBox) memoryMeasurement?.WindowOther?.FirstOrDefault();
+            var modalWindow = (Interface.MemoryStruct.MessageBox) memoryMeasurement?.WindowOther?.FirstOrDefault();
             if (null != modalWindow)
             {
-                if (modalWindow.TopCaptionText == "Not Enough Cargo Space" || modalWindow.TopCaptionText == "Information")
+                if (modalWindow?.TopCaptionText == "Not Enough Cargo Space" || modalWindow?.TopCaptionText == "Information")
                     cargoFull = true;
                 yield return new CloseOtherWindow(memoryMeasurement);
             }
