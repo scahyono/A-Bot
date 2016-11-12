@@ -49,11 +49,16 @@ namespace Sanderling.ABot.Bot.Task
                 if (null == scanResultCombatSite)
                     scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
-                if (null != nextSystemInRouteLabel)
+                var homeStation = overviewWindow?.ListView?.Entry?.Where(entry => (entry?.CellValueFromColumnHeader("Name") == "Aphend VII - Moon 4 - Emperor Family Academy") && (entry?.CellValueFromColumnHeader("Type") == "Amarr Trade Post"))
+                        ?.FirstOrDefault();
+
+                if (Bot.cargoFull && null != homeStation)
+                    yield return homeStation?.ClickMenuEntryByRegexPattern(bot, "Dock");
+                else if (null != nextSystemInRouteLabel)
                 {
                     var nextSystemInRoute = nextSystemInRouteLabel.Split('>')[2].Split('<')[0];
-                    yield return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == nextSystemInRoute)
-                            ?.Last().ClickMenuEntryByRegexPattern(bot, "Jump");
+                    yield return overviewWindow?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == nextSystemInRoute)
+                            ?.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, "Jump");
                 }
                 else if (null != scanResultAccelerationGate)
                 {
