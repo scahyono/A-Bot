@@ -3,6 +3,7 @@ using Sanderling.Accumulation;
 using Sanderling.Motor;
 using System.Collections.Generic;
 using System.Linq;
+using WindowsInput.Native;
 
 namespace Sanderling.ABot.Bot.Task
 {
@@ -50,6 +51,12 @@ namespace Sanderling.ABot.Bot.Task
 			get
 			{
 				var toggleKey = module?.TooltipLast?.Value?.ToggleKey;
+
+                if (module?.TooltipLast?.Value?.IsWeapon ?? false) {
+                    var toggleKeyList = new List<VirtualKeyCode>(toggleKey);
+                    toggleKeyList.Add(VirtualKeyCode.VK_E);
+                    toggleKey = toggleKeyList.ToArray();
+                }
 
 				if (0 < toggleKey?.Length)
 					return toggleKey?.KeyboardPressCombined();
