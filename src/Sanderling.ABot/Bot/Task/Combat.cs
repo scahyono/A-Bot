@@ -185,12 +185,14 @@ namespace Sanderling.ABot.Bot.Task
             if (entry.Type.StartsWith("Celestial")) return false;
             if (entry.Type == "Astrahus") return false;
             if (entry.Type == "Fortizar") return false;
+            if (entry?.CellValueFromColumnHeader("Corporation") == null) return false;
+            if (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") return false;
             return true;
         }
 
         public static Sanderling.Parse.IOverviewEntry[] GetListOverviewToAttack(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, Bot bot)
         {
-            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (entry?.CellValueFromColumnHeader("Type") != "Circadian Seeker"))
+            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (entry?.CellValueFromColumnHeader("Type") != "Circadian Seeker") && (entry?.CellValueFromColumnHeader("Corporation") == null))
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
                     ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();

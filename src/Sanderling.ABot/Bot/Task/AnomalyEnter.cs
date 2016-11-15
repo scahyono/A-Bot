@@ -41,13 +41,9 @@ namespace Sanderling.ABot.Bot.Task
                 Interface.MemoryStruct.IListEntry scanResultAccelerationGate =
                     overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Type").EndsWith("Acceleration Gate"))?.FirstOrDefault();
 
-                Interface.MemoryStruct.IListEntry scanResultCombatSite =
-                    overviewWindow?.ListView?.Entry?.Where(entry => entry.CellValueFromColumnHeader("Name").StartsWith("Blood Raider Gauntlet") && entry.CellValueFromColumnHeader("Type") == "Celestial Beacon")?.FirstOrDefault();
-
                 var probeScannerWindow = memoryMeasurement?.WindowProbeScanner?.FirstOrDefault();
 
-                if (null == scanResultCombatSite)
-                    scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
+                Interface.MemoryStruct.IListEntry scanResultCombatSite = probeScannerWindow?.ScanResultView?.Entry?.FirstOrDefault(AnomalySuitableGeneral);
 
                 var homeStation = overviewWindow?.ListView?.Entry?.Where(entry => (entry?.CellValueFromColumnHeader("Name") == "Aphend VII - Moon 4 - Emperor Family Academy") && (entry?.CellValueFromColumnHeader("Type") == "Amarr Trade Post"))
                         ?.FirstOrDefault();
