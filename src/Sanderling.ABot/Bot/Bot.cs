@@ -8,6 +8,8 @@ using Sanderling.Motor;
 using Sanderling.ABot.Bot.Task;
 using Sanderling.ABot.Bot.Memory;
 using Sanderling.ABot.Serialization;
+using Bib3.Geometrik;
+using WindowsInput.Native;
 
 namespace Sanderling.ABot.Bot
 {
@@ -166,6 +168,13 @@ namespace Sanderling.ABot.Bot
 
 			var moduleUnknown = MemoryMeasurementAccu?.ShipUiModule?.FirstOrDefault(module => null == module?.TooltipLast?.Value);
 
+            var weaponCount = MemoryMeasurementAccu?.ShipUiModule?.Count(module => module?.TooltipLast?.Value?.IsWeapon ?? false);
+            if (weaponCount == 0)
+            {
+                var weaponModules = MemoryMeasurementAccu?.ShipUiModule?.Where(module => module?.TooltipLast?.Value?.LabelText?.Any(text => text.Text?.Contains("Beam") ?? false) ?? false);
+                weaponModules.ForEach(module => module.TooltipLast.Value = new ModuleButtonTooltipWeapon(module.TooltipLast.Value));
+            }
+
             if (null == memoryMeasurement?.WindowDroneView?.First())
                 yield break; // are you in escape pod?
 
@@ -190,5 +199,238 @@ namespace Sanderling.ABot.Bot
 			if (combatTask.Completed && cleanUpTask.Completed)
 				yield return new AnomalyEnter { bot = this };
 		}
-	}
+
+        private static IModuleButtonTooltip RepairWeapon(Accumulation.IShipUiModule module)
+        {
+            return module.TooltipLast.Value.LabelText.Any(text => text.Text.Contains("Beam")) ?
+                                    new ModuleButtonTooltipWeapon(module.TooltipLast.Value) :
+                                    module.TooltipLast.Value;
+        }
+    }
+
+    internal class ModuleButtonTooltipWeapon : IModuleButtonTooltip
+    {
+        private IModuleButtonTooltip original;
+
+        public ModuleButtonTooltipWeapon(IModuleButtonTooltip original)
+        {
+            this.original = original;
+        }
+
+        public IEnumerable<Interface.MemoryStruct.IUIElementText> ButtonText
+        {
+            get
+            {
+                return original.ButtonText;
+            }
+        }
+
+        public int? ChildLastInTreeIndex
+        {
+            get
+            {
+                return original.ChildLastInTreeIndex;
+            }
+        }
+
+        public long Id
+        {
+            get
+            {
+                return original.Id;
+            }
+        }
+
+        public IEnumerable<Interface.MemoryStruct.IUIElementInputText> InputText
+        {
+            get
+            {
+                return original.InputText;
+            }
+        }
+
+        public int? InTreeIndex
+        {
+            get
+            {
+                return original.InTreeIndex;
+            }
+        }
+
+        public bool? IsAfterburner
+        {
+            get
+            {
+                return original.IsAfterburner;
+            }
+        }
+
+        public bool? IsArmorRepairer
+        {
+            get
+            {
+                return original.IsArmorRepairer;
+            }
+        }
+
+        public bool? IsHardener
+        {
+            get
+            {
+                return original.IsHardener;
+            }
+        }
+
+        public bool? IsIceHarvester
+        {
+            get
+            {
+                return original.IsIceHarvester;
+            }
+        }
+
+        public bool? IsMicroJumpDrive
+        {
+            get
+            {
+                return original.IsMicroJumpDrive;
+            }
+        }
+
+        public bool? IsMicroWarpDrive
+        {
+            get
+            {
+                return original.IsMicroWarpDrive;
+            }
+        }
+
+        public bool? IsMiner
+        {
+            get
+            {
+                return original.IsMiner;
+            }
+        }
+
+        public bool? IsShieldBooster
+        {
+            get
+            {
+                return original.IsShieldBooster;
+            }
+        }
+
+        public bool? IsSurveyScanner
+        {
+            get
+            {
+                return original.IsSurveyScanner;
+            }
+        }
+
+        public bool? IsTargetPainter
+        {
+            get
+            {
+                return original.IsTargetPainter;
+            }
+        }
+
+        public bool? IsWeapon
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public IEnumerable<Interface.MemoryStruct.IUIElementText> LabelText
+        {
+            get
+            {
+                return original.LabelText;
+            }
+        }
+
+        public int? RangeFalloff
+        {
+            get
+            {
+                return original.RangeFalloff;
+            }
+        }
+
+        public int? RangeMax
+        {
+            get
+            {
+                return original.RangeMax;
+            }
+        }
+
+        public int? RangeOptimal
+        {
+            get
+            {
+                return original.RangeOptimal;
+            }
+        }
+
+        public int? RangeWithin
+        {
+            get
+            {
+                return original.RangeWithin;
+            }
+        }
+
+        public RectInt Region
+        {
+            get
+            {
+                return original.Region;
+            }
+        }
+
+        public Interface.MemoryStruct.IUIElement RegionInteraction
+        {
+            get
+            {
+                return original.RegionInteraction;
+            }
+        }
+
+        public int? SignatureRadiusModifierMilli
+        {
+            get
+            {
+                return original.SignatureRadiusModifierMilli;
+            }
+        }
+
+        public IEnumerable<Interface.MemoryStruct.ISprite> Sprite
+        {
+            get
+            {
+                return original.Sprite;
+            }
+        }
+
+        public VirtualKeyCode[] ToggleKey
+        {
+            get
+            {
+                return original.ToggleKey;
+            }
+        }
+
+        public Interface.MemoryStruct.IUIElementText ToggleKeyTextLabel
+        {
+            get
+            {
+                return original.ToggleKeyTextLabel;
+            }
+        }
+    }
 }

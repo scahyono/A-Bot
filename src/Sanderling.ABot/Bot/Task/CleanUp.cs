@@ -65,6 +65,15 @@ namespace Sanderling.ABot.Bot.Task
                     var droneGroupInBaySalvage = droneGroupWithNameMatchingPattern("salvage");
                     var droneGroupInLocalSpace = droneGroupWithNameMatchingPattern("local space");
 
+                    if (null == droneGroupInBaySalvage)
+                    {
+                        listOverviewEntryToSalvage = new Sanderling.Parse.IOverviewEntry[0];
+                        listOverviewEntryToLoot =
+                        memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (((entry?.Type?.EndsWith("Wreck") ?? false) || entry?.Type == "Cargo Container") && (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") && (entry?.Sprite?.FirstOrDefault()?.Color?.BMilli == 1000) && !Bot.cargoFull))
+                        ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
+                        ?.ToArray();
+                    }
+
                     var droneInBayCount = droneGroupInBay?.Caption?.Text?.CountFromDroneGroupCaption();
                     var droneInBaySalvageCount = droneGroupInBaySalvage?.Caption?.Text?.CountFromDroneGroupCaption();
                     var droneInLocalSpaceCount = droneGroupInLocalSpace?.Caption?.Text?.CountFromDroneGroupCaption();
@@ -135,7 +144,6 @@ namespace Sanderling.ABot.Bot.Task
                                         yield return listOverviewEntryToLoot.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"^open cargo*");
                                     }
                                 }
-                                //                                    yield return listOverviewEntryToSalvage.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, @"abandon all nearby wrecks");
                             }
                             else {
                                 if (listOverviewEntryToLoot.Length > 0)
