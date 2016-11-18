@@ -20,7 +20,7 @@ namespace Sanderling.ABot.Bot.Task
 		static public bool AnomalySuitableGeneral(Interface.MemoryStruct.IListEntry scanResult) =>
 			scanResult?.CellValueFromColumnHeader("Group")?.RegexMatchSuccessIgnoreCase("combat") ?? false;
 
-        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Elmed","Ustnia","Minin","Askonak","Murini","Nordar","Hostakoh","Yooh","Turba","Sonama","Suner","Masanuh","Leva","Amdonen","Dantan","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
+        static string[] route = {"Romi","Madirmilire","Saana","Bahromab","Kudi","Fabum","Sharji","Gosalav","Sayartchen","Abaim","Somouh","Sorzielang","Teshi","Ashab","Kehour","Boranai","Toshabia","Irnin","Martha","Kooreng","Shaggoth","Elmed","Ustnia","Minin","Askonak","Murini","Nordar","Hostakoh","Yooh","Turba","Sonama","Suner","Masanuh","Leva","Amdonen","Kor-Azor Prime","Sehmy","Mora","Polfaly","Nibainkier","Jinkah","Nahyeen","Danyana","Dantan","Kador Prime","Khafis","Gonan","Ghesis","Gamdis","Zororzih","Gensela","Dresi","Aphend"};
 
     public IEnumerable<IBotTask> Component
 		{
@@ -52,9 +52,12 @@ namespace Sanderling.ABot.Bot.Task
                     yield return homeStation?.ClickMenuEntryByRegexPattern(bot, "Dock");
                 else if (null != nextSystemInRouteLabel)
                 {
-                    var nextSystemInRoute = nextSystemInRouteLabel.Split('>')[2].Split('<')[0];
-                    yield return overviewWindow?.ListView?.Entry?.Where(entry => entry?.CellValueFromColumnHeader("Name") == nextSystemInRoute)
-                            ?.FirstOrDefault().ClickMenuEntryByRegexPattern(bot, "Jump");
+                    var nextSystemInRoute = overviewWindow?.ListView?.Entry?.Where(entry => entry?.Sprite?.FirstOrDefault()?.Color.BMilli == 0)
+                            ?.FirstOrDefault(); // Yellow entry
+                    if (nextSystemInRoute?.CellValueFromColumnHeader("Type").StartsWith("Stargate") ?? false)
+                        yield return nextSystemInRoute.ClickMenuEntryByRegexPattern(bot, "Jump");
+                    else
+                        yield return nextSystemInRoute.ClickMenuEntryByRegexPattern(bot, "Dock");
                 }
                 else if (null != scanResultAccelerationGate)
                 {
