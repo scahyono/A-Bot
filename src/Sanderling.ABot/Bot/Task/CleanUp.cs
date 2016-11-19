@@ -110,7 +110,7 @@ namespace Sanderling.ABot.Bot.Task
                             {
                                 Completed = true;
                             }
-                        else if (Environment.TickCount - lastCleanUpListChanged > 5 * 60 * 1000) // 5 minutes limit
+                        else if (Environment.TickCount - lastCleanUpListChanged > 10 * 60 * 1000) // 5 minutes limit
                         { // if taking too long cleaning up one wreak/loot then warp out! We are color blind. So, we cannot detect other people wrecks.
                             if (0 < droneInLocalSpaceCount)
                             {
