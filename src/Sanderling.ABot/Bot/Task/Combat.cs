@@ -192,7 +192,7 @@ namespace Sanderling.ABot.Bot.Task
 
         public static Sanderling.Parse.IOverviewEntry[] GetListOverviewToAttack(Sanderling.Parse.IMemoryMeasurement memoryMeasurement, Bot bot)
         {
-            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (entry?.CellValueFromColumnHeader("Type") != "Circadian Seeker") && (entry?.CellValueFromColumnHeader("Corporation") == null))
+            return memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (entry?.MainIcon?.Color?.IsRed() ?? false) && (entry?.CellValueFromColumnHeader("Type") != "Circadian Seeker") && (entry?.CellValueFromColumnHeader("Type") != "Autothysian Lancer") && (entry?.CellValueFromColumnHeader("Corporation") == null))
                     ?.OrderBy(entry => bot.AttackPriorityIndex(entry))
                     ?.ThenBy(entry => entry?.DistanceMax ?? int.MaxValue)
                     ?.ToArray();
