@@ -67,9 +67,12 @@ namespace Sanderling.ABot.Bot.Task
 
                     if (null == droneGroupInBaySalvage)
                     {
+                        var emptyWreckId = listOverviewEntryToSalvage.Min(entry => entry?.Sprite?.FirstOrDefault()?.Texture0Id?.Id);
+                        var otherWreckId = listOverviewEntryToSalvage.Max(entry => entry?.Sprite?.FirstOrDefault()?.Texture0Id?.Id);
+                        if (emptyWreckId != otherWreckId) emptyWreckId = 0; // not sure 
                         listOverviewEntryToSalvage = new Sanderling.Parse.IOverviewEntry[0];
                         listOverviewEntryToLoot =
-                        memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (((entry?.Type?.EndsWith("Wreck") ?? false) || entry?.Type == "Cargo Container") && (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") && (entry?.Sprite?.FirstOrDefault()?.Color?.BMilli == 1000) && !Bot.cargoFull))
+                        memoryMeasurement?.WindowOverview?.FirstOrDefault()?.ListView?.Entry?.Where(entry => (((entry?.Type?.EndsWith("Wreck") ?? false) || entry?.Type == "Cargo Container") && (entry?.Sprite?.FirstOrDefault()?.Texture0Id?.Id != emptyWreckId) && (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") && (entry?.Sprite?.FirstOrDefault()?.Color?.BMilli == 1000) && !Bot.cargoFull))
                         ?.OrderBy(entry => entry?.DistanceMax ?? int.MaxValue)
                         ?.ToArray();
                     }
