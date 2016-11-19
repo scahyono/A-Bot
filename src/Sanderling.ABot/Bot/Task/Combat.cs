@@ -126,7 +126,7 @@ namespace Sanderling.ABot.Bot.Task
                     if (droneDamaged)
                         yield return new ReturnDroneTask();
 
-                    if (listOverviewEntryToAttack?.Length > 0 && listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && overviewCaption == "Overview (General)") // restrain and jump to the next system when a pilot is already in the plex
+                    if (listOverviewEntryToAttack?.Length > 0 && listOverviewEntryToAvoid.Length > 0 && droneInLocalSpaceCount == 0 && (overviewCaption?.StartsWith("Overview (General") ?? false) ) // restrain and jump to the next system when a pilot is already in the plex
                         yield return AnomalyEnter.JumpToNextSystem(memoryMeasurement, bot);
 
                     if (listOverviewEntryToAttack?.Length > listOverviewEntryToAttackLastLength) // reinforment detected
@@ -174,11 +174,8 @@ namespace Sanderling.ABot.Bot.Task
             if (entry?.MainIcon?.Color?.IsRed() ?? true) return false;
             if (entry == null) return false;
             if (entry.Type == null) return false;
-            if (entry.Type.StartsWith("Amarr")) return false;
-            if (entry.Type.StartsWith("Caldari")) return false;
-            if (entry.Type.StartsWith("Minmatar")) return false;
-            if (entry.Type.StartsWith("Gallente")) return false;
-            if (entry.Type.StartsWith("Stargate")) return false;
+            if (entry.Type.EndsWith("Station")) return false;
+            if (entry.Type.EndsWith("Post")) return false;
             if (entry.Type.EndsWith("Gate")) return false;
             if (entry.Type.EndsWith("Container")) return false;
             if (entry.Type.EndsWith("Sanctum")) return false;

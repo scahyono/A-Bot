@@ -101,7 +101,7 @@ namespace Sanderling.ABot.Bot.Task
                         {
                             yield return new LootAll(inventoryWindow);
                         }
-                        else if (overviewCaption != "Overview (Loot)")
+                        else if (!(overviewCaption?.StartsWith("Overview (Loot") ?? false))
                             if (0 < droneInLocalSpaceCount)
                             {
                                 yield return new SelectOverviewTab(memoryMeasurement, "Loot");
@@ -123,7 +123,7 @@ namespace Sanderling.ABot.Bot.Task
                                 yield return new SelectOverviewTab(memoryMeasurement, "General");
                             }
                         }
-                        else if (overviewCaption == "Overview (Loot)")
+                        else if (overviewCaption?.StartsWith("Overview (Loot") ?? false)
                         {
                             if (0 < listOverviewEntryToSalvage.Length)
                             {
