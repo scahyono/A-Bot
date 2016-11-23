@@ -52,7 +52,7 @@ namespace Sanderling.ABot.Bot.Task
                     yield return homeStation?.ClickMenuEntryByRegexPattern(bot, "Dock");
                 else if (null != nextSystemInRouteLabel)
                 {
-                    var nextSystemInRoute = overviewWindow?.ListView?.Entry?.Where(entry => entry?.Sprite?.FirstOrDefault()?.Color.BMilli == 0)
+                    var nextSystemInRoute = overviewWindow?.ListView?.Entry?.Where(entry => entry?.Sprite?.FirstOrDefault()?.Color.BMilli == 0 && (entry?.CellValueFromColumnHeader("Corporation") == null))
                             ?.FirstOrDefault(); // Yellow entry
                     if (nextSystemInRoute?.CellValueFromColumnHeader("Type").StartsWith("Stargate") ?? false)
                         yield return nextSystemInRoute.ClickMenuEntryByRegexPattern(bot, "Jump");
