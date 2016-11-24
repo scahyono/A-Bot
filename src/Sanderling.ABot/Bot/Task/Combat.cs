@@ -174,16 +174,11 @@ namespace Sanderling.ABot.Bot.Task
             if (entry?.MainIcon?.Color?.IsRed() ?? true) return false;
             if (entry == null) return false;
             if (entry.Type == null) return false;
-            if (entry.Type.EndsWith("Station")) return false;
-            if (entry.Type.EndsWith("Post")) return false;
-            if (entry.Type.EndsWith("Gate")) return false;
             if (entry.Type.EndsWith("Container")) return false;
-            if (entry.Type.EndsWith("Sanctum")) return false;
             if (entry.Type.StartsWith("Celestial")) return false;
-            if (entry.Type == "Astrahus") return false;
-            if (entry.Type == "Fortizar") return false;
-            if (entry?.CellValueFromColumnHeader("Corporation") == null) return false;
-            if (entry?.CellValueFromColumnHeader("Corporation") == "[ANEWB]") return false;
+            if (entry.CellValueFromColumnHeader("Size").EndsWith("km")) return false; // don't avoid huge object like station, citadel and engineering complexes
+            if (entry.CellValueFromColumnHeader("Corporation") == null) return false;
+            if (entry.CellValueFromColumnHeader("Corporation") == "[ANEWB]") return false;
             return true;
         }
 

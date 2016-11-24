@@ -139,6 +139,15 @@ namespace Sanderling.ABot.Bot
 
 		IEnumerable<IBotTask> RootTaskListComponent()
 		{
+            /*  Overview settings:
+                1. 50km optimal gun. I use medium beam laser with microwave crystal for sustainability.
+                2. Default approach at 50km to outrange NPC guns (High Sec anoms and DED level 4/10 or below).
+                3. Add Loot tab (default + NPC Mission + NPC Pirate)
+                4. General Tab: default - wrecks - Large Colidable Structure
+                5. Columns: default + corporation + size
+                6. Hide passive modules
+                7. Drones in combat and salvage group + focus fire
+            */
             var memoryMeasurement = MemoryMeasurementAtTime?.Value;
 
             var modalWindow = (Interface.MemoryStruct.MessageBox) memoryMeasurement?.WindowOther?.FirstOrDefault();
